@@ -2,9 +2,12 @@ import { InitiateFileDownloadRequest, InitiateFileDownloadResponse } from '../..
 import { GetSignedUrlConfig, Storage } from '@google-cloud/storage'
 import { Firestore } from '@google-cloud/firestore'
 import credentialsObj from './credentialsObj';
+import TokenBucketManager from './TokenBucketManager';
 
 const storage = new Storage(credentialsObj)
 const firestore = new Firestore(credentialsObj)
+
+const tokenBucketManager = new TokenBucketManager()
 
 const initiateFileDownloadHandler = async (request: InitiateFileDownloadRequest): Promise<InitiateFileDownloadResponse> => {
     const {sha1} = request
@@ -17,6 +20,20 @@ const initiateFileDownloadHandler = async (request: InitiateFileDownloadRequest)
     const docRef = collectionRef.doc(sha1.toString())
     const docSnapshot = await docRef.get()
     let found = docSnapshot.exists
+    if (!found) {
+        return {
+            type: 'initiateFileDownload',
+            downloadUrl: undefined
+        }
+    }
+    const docData = docSnapshot.data()
+    const size = (docData as any)['size']
+
+    const okay = tokenBucketManager.reportDownload(size)
+    if (!okay) {
+        throw Error(`Resource busy.`)
+    }
+
     const downloadUrl = found ? await generateV4DownloadSignedUrl(bucketName, fileName) : undefined
     found && await docRef.update({timestampLastAccessed: Date.now()})
     return {
@@ -25,7 +42,7 @@ const initiateFileDownloadHandler = async (request: InitiateFileDownloadRequest)
     }
 }
 
-async function generateV4DownloadSignedUrl(bucketName, fileName) {
+async function generateV4DownloadSignedUrl(bucketName: string, fileName: string) {
     // These options will allow temporary download access to the file
     const options: GetSignedUrlConfig = {
         version: 'v4',

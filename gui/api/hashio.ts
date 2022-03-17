@@ -36,6 +36,6 @@ module.exports = (req: VercelRequest, res: VercelResponse) => {
         res.json(result)
     }).catch((error: Error) => {
         console.warn(error.message)
-        res.status(404).send(`Error: ${error.message}`)
+        res.status(500).send(`Error: ${error.message}`)
     })
 }

@@ -24,7 +24,7 @@ const initiateFileUploadHandler = async (request: InitiateFileUploadRequest): Pr
     }
 }
 
-async function generateV4UploadSignedUrl(bucketName, fileName) {
+async function generateV4UploadSignedUrl(bucketName: string, fileName: string) {
     // These options will allow temporary upload access to the file
     const options: GetSignedUrlConfig = {
         version: 'v4',
