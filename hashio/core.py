@@ -7,12 +7,15 @@ from .get_hashio_storage_dir import get_hashio_storage_dir
 from .TemporaryDirectory import TemporaryDirectory
 from ._safe_pickle import _safe_pickle, _safe_unpickle
 
+base_api_url = 'https://hashio.vercel.app/api/hashio'
+# base_api_url = 'http://localhost:3000/api/hashio'
+
 def store_file(filename: str) -> str:
     size = os.path.getsize(filename)
-    init_url = f'https://us-east4-hashio-344322.cloudfunctions.net/initializeFileUpload?size={size}'
+    init_url = f'{base_api_url}?type=initiateFileUpload&size={size}'
     init_response = requests.get(init_url)
     if init_response.status_code != 200:
-        raise Exception(f'Error initializing file upload ({init_response.status_code}): {init_response.reason}')
+        raise Exception(f'Error initiating file upload ({init_response.status_code}): {init_response.reason}')
     x = init_response.json()
     upload_url = x['uploadUrl']
     file_name = x['fileName']
@@ -26,7 +29,7 @@ def store_file(filename: str) -> str:
             data=f,
             headers=headers
         )
-    finalize_url = f'https://us-east4-hashio-344322.cloudfunctions.net/finalizeFileUpload?fileName={file_name}'
+    finalize_url = f'{base_api_url}?type=finalizeFileUpload&fileName={file_name}'
     finalize_response = requests.get(finalize_url)
     if finalize_response.status_code != 200:
         raise Exception(f'Error finalizing file upload ({finalize_response.status_code}): {finalize_response.reason}')
@@ -47,15 +50,14 @@ def load_file(uri: str) -> Union[str, None]:
     if os.path.exists(filename):
         return filename
 
-    init_url = f'https://us-east4-hashio-344322.cloudfunctions.net/initializeFileDownload?sha1={sha1}'
+    init_url = f'{base_api_url}?type=initiateFileDownload&sha1={sha1}'
     init_response = requests.get(init_url)
     if init_response.status_code != 200:
-        raise Exception(f'Error initializing file download ({init_response.status_code}): {init_response.reason}')
+        raise Exception(f'Error initiating file download ({init_response.status_code}): {init_response.reason}')
     x = init_response.json()
-    found = x['found']
-    if not found:
+    download_url = x.get('downloadUrl', None)
+    if not download_url:
         return None
-    download_url = x['downloadUrl']
     
     if not os.path.exists(parent_dir):
         os.makedirs(parent_dir)
