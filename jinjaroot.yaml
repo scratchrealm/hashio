@@ -1,0 +1,9 @@
+projectName: hashio
+pythonProjectVersion: 0.1.0
+webAppProjectVersion: 0.1.0
+projectAuthor: Jeremy Magland
+projectAuthorEmail: jmagland@flatironinstitute.org
+projectDescription: Content-addressable cloud storage
+projectUrl: https://github.com/scratchrealm/hashio
+projectBugTrackerUrl: https://github.com/scratchrealm/hashio/issues
+pythonPackageDir: .
