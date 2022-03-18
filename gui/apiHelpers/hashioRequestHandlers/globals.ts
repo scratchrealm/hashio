@@ -1,3 +1,7 @@
+import { Storage } from '@google-cloud/storage'
+import { Firestore } from '@google-cloud/firestore'
+import TokenBucketManager from './TokenBucketManager';
+
 const GOOGLE_CREDENTIALS = process.env.GOOGLE_CREDENTIALS
 if (!GOOGLE_CREDENTIALS) {
     throw Error('Environment variable not set: GOOGLE_CREDENTIALS')
@@ -11,4 +15,7 @@ const credentialsObj = {
     }
 }
 
-export default credentialsObj
+export const storage = new Storage(credentialsObj)
+export const firestore = new Firestore(credentialsObj)
+
+export const tokenBucketManager = new TokenBucketManager()

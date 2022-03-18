@@ -22,13 +22,16 @@ const useRoute = () => {
     return {routePath, query, setRoute}
 }
 
-const queryString = (params: { [key: string]: string | string[] }) => {
+const queryString = (params: { [key: string]: string | string[] | undefined }) => {
     const keys = Object.keys(params)
     if (keys.length === 0) return ''
     return '?' + (
         keys.map((key) => {
             const v = params[key]
-            if (typeof(v) === 'string') {
+            if (v === undefined) {
+                return encodeURIComponent(key) + '='
+            }
+            else if (typeof(v) === 'string') {
                 return encodeURIComponent(key) + '=' + v
             }
             else {

@@ -1,13 +1,24 @@
-import { Firestore } from '@google-cloud/firestore';
-import { Storage } from '@google-cloud/storage';
 import crypto from 'crypto';
 import internal from 'stream';
-import { Sha1Hash } from '../../src/commonInterface/kacheryTypes';
+import { isNumber, isSha1Hash, Sha1Hash, _validateObject } from '../../src/commonInterface/kacheryTypes';
 import { FinalizeFileUploadRequest, FinalizeFileUploadResponse } from '../../src/hashioInterface/HashioRequest';
-import credentialsObj from './credentialsObj';
+import { firestore, storage } from './globals';
 
-const storage = new Storage(credentialsObj)
-const firestore = new Firestore(credentialsObj)
+export type FileDoc = {
+    sha1: Sha1Hash
+    size: number
+    timestampCreated: number
+    timestampLastAccessed: number
+}
+
+export const isFileDoc = (x: any): x is FileDoc => {
+    return _validateObject(x, {
+        sha1: isSha1Hash,
+        size: isNumber,
+        timestampCreated: isNumber,
+        timestampLastAccessed: isNumber
+    })
+}
 
 const finalizeFileUploadHandler = async (request: FinalizeFileUploadRequest): Promise<FinalizeFileUploadResponse> => {
     const {fileName} = request
@@ -21,7 +32,7 @@ const finalizeFileUploadHandler = async (request: FinalizeFileUploadRequest): Pr
     const bucket = storage.bucket(bucketName)
     const file = bucket.file(fileName)
     const [metadata] = await file.getMetadata()
-    const size = metadata.size
+    const size = parseInt(metadata.size)
     const readStream = file.createReadStream()
     const sha1 = await computeSha1FromReadStream(readStream)
     const s = sha1
@@ -42,12 +53,17 @@ const finalizeFileUploadHandler = async (request: FinalizeFileUploadRequest): Pr
             await destFile.delete()
         }
         await file.move(destFname)
-        await docRef.set({
+        const fileDoc: FileDoc = {
             sha1,
             size,
             timestampCreated: Date.now(),
             timestampLastAccessed: Date.now()
-        })
+        }
+        if (!isFileDoc(fileDoc)) {
+            console.warn(fileDoc)
+            throw Error('Invalid file doc')
+        }
+        await docRef.set(fileDoc)
     }
     return {
         type: 'finalizeFileUpload',

@@ -36,6 +36,7 @@ module.exports = (req: VercelRequest, res: VercelResponse) => {
         res.json(result)
     }).catch((error: Error) => {
         console.warn(error.message)
-        res.status(500).send(`Error: ${error.message}`)
+        const statusCode = error.name === 'ResourceBusy' ? 503 : 500
+        res.status(statusCode).send(error.message)
     })
 }

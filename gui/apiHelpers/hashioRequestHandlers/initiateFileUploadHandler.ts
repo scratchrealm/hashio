@@ -1,8 +1,7 @@
-import { GetSignedUrlConfig, Storage } from '@google-cloud/storage';
+import { GetSignedUrlConfig } from '@google-cloud/storage';
 import { InitiateFileUploadRequest, InitiateFileUploadResponse } from '../../src/hashioInterface/HashioRequest';
-import credentialsObj from './credentialsObj';
-
-const storage = new Storage(credentialsObj)
+import { storage, tokenBucketManager } from './globals';
+import ResourceBusyError from './ResourceBusyError';
 
 const MAX_FILE_SIZE = 30 * 1000 * 1000
 
@@ -12,6 +11,11 @@ const initiateFileUploadHandler = async (request: InitiateFileUploadRequest): Pr
     if (size > MAX_FILE_SIZE) {
         throw Error(`Invalid size: ${size} > ${MAX_FILE_SIZE}`)
     }
+
+    if (!tokenBucketManager.canUpload(size)) {
+        throw new ResourceBusyError('Exceeded max uploads')
+    }
+    tokenBucketManager.reportUpload(size)
 
     const bucketName = 'hashio'
     const fileName = `temporaryUploads/${randomAlphaString(10)}.${size}`

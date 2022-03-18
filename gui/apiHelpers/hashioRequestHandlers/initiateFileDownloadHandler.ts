@@ -1,16 +1,16 @@
+import { GetSignedUrlConfig } from '@google-cloud/storage';
 import { InitiateFileDownloadRequest, InitiateFileDownloadResponse } from '../../src/hashioInterface/HashioRequest';
-import { GetSignedUrlConfig, Storage } from '@google-cloud/storage'
-import { Firestore } from '@google-cloud/firestore'
-import credentialsObj from './credentialsObj';
-import TokenBucketManager from './TokenBucketManager';
-
-const storage = new Storage(credentialsObj)
-const firestore = new Firestore(credentialsObj)
-
-const tokenBucketManager = new TokenBucketManager()
+import { isFileDoc } from './finalizeFileUploadHandler';
+import { firestore, storage, tokenBucketManager } from './globals';
+import ResourceBusyError from './ResourceBusyError';
 
 const initiateFileDownloadHandler = async (request: InitiateFileDownloadRequest): Promise<InitiateFileDownloadResponse> => {
     const {sha1} = request
+
+    // we don't know the size of the download, but let's first check if there's anything available at all
+    if (!tokenBucketManager.canDownload(1)) {
+        throw new ResourceBusyError('Exceeded max downloads')
+    }
 
     const bucketName = 'hashio'
     const s = sha1
@@ -27,12 +27,18 @@ const initiateFileDownloadHandler = async (request: InitiateFileDownloadRequest)
         }
     }
     const docData = docSnapshot.data()
-    const size = (docData as any)['size']
-
-    const okay = tokenBucketManager.reportDownload(size)
-    if (!okay) {
-        throw Error(`Resource busy.`)
+    if (!isFileDoc(docData)) {
+        console.warn(docData)
+        docRef.delete() // only during dev
+        throw Error('Invalid file doc')
     }
+    const size = docData.size
+
+    const okay = tokenBucketManager.canDownload(size)
+    if (!okay) {
+        throw new ResourceBusyError('Exceeded max downloads')
+    }
+    tokenBucketManager.reportDownload(size)
 
     const downloadUrl = found ? await generateV4DownloadSignedUrl(bucketName, fileName) : undefined
     found && await docRef.update({timestampLastAccessed: Date.now()})
