@@ -1,7 +1,7 @@
 const opts = {
-    numDownloadsPerMinute: 4,
+    numDownloadsPerMinute: 40,
     downloadBytesPerMinute: 1000 * 1000 * 1000,
-    numUploadsPerMinute: 4,
+    numUploadsPerMinute: 40,
     uploadBytesPerMinute: 1000 * 1000 * 1000
 }
 
