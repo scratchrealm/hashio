@@ -58,5 +58,5 @@ z = ha.load_pkl(uri)
 Currently there are some limits on usage:
 
 * The maximum allowed size of a single file upload is 30 MiB
-* The system only allows a certain number of uploads and downloads per minute. This limit is global accross all users. If the limit is exceeded you will get a "Service Unavailable" server error.
+* The system only allows a certain number of uploads and downloads per minute. This limit is global across all users. If the limit is exceeded you will get a "Service Unavailable" server error.
 * Uploaded files are stored in the cloud, but are not guaranteed to be available forever. Old files may be deleted during garbage collection, depending on their size, frequency of access, and whether they are referred to elsewhere.
