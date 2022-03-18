@@ -84,7 +84,7 @@ def store_text(text: str) -> str:
 
 def store_json(x: Any, *, separators=(',', ':'), indent=None) -> str:
     import simplejson
-    text = simplejson.dumps(object, separators=separators, indent=indent, allow_nan=False)
+    text = simplejson.dumps(x, separators=separators, indent=indent, allow_nan=False)
     return store_text(text)
 
 def store_npy(array: Any) -> str:
