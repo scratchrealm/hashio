@@ -1,8 +1,25 @@
 import { GetSignedUrlConfig } from '@google-cloud/storage';
+import { isEqualTo, isNumber, isSha1Hash, Sha1Hash, _validateObject } from '../../src/commonInterface/kacheryTypes';
 import { InitiateFileDownloadRequest, InitiateFileDownloadResponse } from '../../src/hashioInterface/HashioRequest';
 import { isFileDoc } from './finalizeFileUploadHandler';
 import { firestore, storage, tokenBucketManager } from './globals';
 import ResourceBusyError from './ResourceBusyError';
+
+export type DownloadEvent = {
+    type: 'download'
+    sha1: Sha1Hash
+    size: number
+    timestamp: number
+}
+
+export const isDownloadEvent = (x: any) => {
+    return _validateObject(x, {
+        type: isEqualTo('download'),
+        sha1: isSha1Hash,
+        size: isNumber,
+        timestamp: isNumber
+    })
+}
 
 const initiateFileDownloadHandler = async (request: InitiateFileDownloadRequest): Promise<InitiateFileDownloadResponse> => {
     const {sha1} = request
@@ -29,7 +46,6 @@ const initiateFileDownloadHandler = async (request: InitiateFileDownloadRequest)
     const docData = docSnapshot.data()
     if (!isFileDoc(docData)) {
         console.warn(docData)
-        docRef.delete() // only during dev
         throw Error('Invalid file doc')
     }
     const size = docData.size
@@ -39,9 +55,15 @@ const initiateFileDownloadHandler = async (request: InitiateFileDownloadRequest)
         throw new ResourceBusyError('Exceeded max downloads')
     }
     tokenBucketManager.reportDownload(size)
+    const downloadEvent: DownloadEvent = {
+        type: 'download',
+        sha1,
+        size,
+        timestamp: Date.now()
+    }
+    await firestore.collection('events').add(downloadEvent)
 
-    const downloadUrl = found ? await generateV4DownloadSignedUrl(bucketName, fileName) : undefined
-    found && await docRef.update({timestampLastAccessed: Date.now()})
+    const downloadUrl = await generateV4DownloadSignedUrl(bucketName, fileName)
     return {
         type: 'initiateFileDownload',
         downloadUrl

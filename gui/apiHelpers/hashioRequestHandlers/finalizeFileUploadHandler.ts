@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import internal from 'stream';
-import { isNumber, isSha1Hash, Sha1Hash, _validateObject } from '../../src/commonInterface/kacheryTypes';
+import { isEqualTo, isNumber, isSha1Hash, Sha1Hash, _validateObject } from '../../src/commonInterface/kacheryTypes';
 import { FinalizeFileUploadRequest, FinalizeFileUploadResponse } from '../../src/hashioInterface/HashioRequest';
 import { firestore, storage } from './globals';
 
@@ -9,6 +9,22 @@ export type FileDoc = {
     size: number
     timestampCreated: number
     timestampLastAccessed: number
+}
+
+export type UploadEvent = {
+    type: 'upload'
+    sha1: Sha1Hash
+    size: number
+    timestamp: number
+}
+
+export const isUploadEvent = (x: any) => {
+    return _validateObject(x, {
+        type: isEqualTo('upload'),
+        sha1: isSha1Hash,
+        size: isNumber,
+        timestamp: isNumber
+    })
 }
 
 export const isFileDoc = (x: any): x is FileDoc => {
@@ -64,6 +80,13 @@ const finalizeFileUploadHandler = async (request: FinalizeFileUploadRequest): Pr
             throw Error('Invalid file doc')
         }
         await docRef.set(fileDoc)
+        const uploadEvent: UploadEvent = {
+            type: 'upload',
+            sha1,
+            size,
+            timestamp: Date.now()
+        }
+        await firestore.collection('events').add(uploadEvent)
     }
     return {
         type: 'finalizeFileUpload',
