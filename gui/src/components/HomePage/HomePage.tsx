@@ -1,7 +1,5 @@
 import React, { FunctionComponent } from 'react';
-import { useSignedIn } from '../googleSignIn/GoogleSignIn';
-import MainPanel from '../MainWindow/MainPanel';
-import Splitter from '../Splitter/Splitter';
+import FindFile from './FindFile';
 
 type Props = {
     width: number
@@ -9,25 +7,13 @@ type Props = {
 }
 
 const HomePage: FunctionComponent<Props> = ({width, height}) => {
-    const {signedIn} = useSignedIn()
+    // const {signedIn} = useSignedIn()
 
     return (
-        <div>
-            <Splitter
-                width={width}
-                height={height}
-                initialPosition={Math.min(400, width/3)}
-            >
-                {
-                    signedIn ? (
-                        <MainPanel
-                            key="main"
-                            width={0}
-                            height={0}
-                        />
-                    ) : <span>Sign in</span>
-                }
-            </Splitter>
+        <div style={{margin: 20}}>
+            <h2>Welcome to hashio</h2>
+            <p>Find a file</p>
+            <FindFile />
         </div>
     )
 }
