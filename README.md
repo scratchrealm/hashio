@@ -1,26 +1,14 @@
 # hashio
 
-Simple Python interface to content-addressable storage on IPFS.
+Simple Python interface to content-addressable storage on [IPFS](https://ipfs.io/) with minimal configuration.
 
 ## Installation and setup
 
 ```bash
-pip install git+https://github.com/scratchrealm/hashio
+pip install --upgrade git+https://github.com/scratchrealm/hashio
 ```
 
-Hashio stores content on IPFS via FileCoin. The preferred method is via [web3.storage](https://web3.storage/). You can [create an account here](https://web3.storage/) using your github login. Once you get an API token, set the following environment variable:
-
-```bash
-export WEB3_STORAGE_TOKEN="paste-taken-here"
-```
-
-Alternatively, if you don't want to use a web3.storage token, you can use our account for now by setting the following environment variable:
-
-```bash
-export HASHIO_API_URL="https://hashio.vercel.app"
-```
-
-Note that this latter method may be throttled or discontinued over time.
+To complete the setup you must [set an environment variable to specify the mechanism hashio will use to store files on IPFS](./doc/hashio_env.md).
 
 ## Storing data
 

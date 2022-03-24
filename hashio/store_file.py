@@ -2,10 +2,10 @@ import os
 import requests
 
 def store_file(filename: str):
-    web3_storage_token = os.environ.get('WEB3_STORAGE_TOKEN', None)
+    web3_storage_token = os.environ.get('HASHIO_WEB3_STORAGE_TOKEN', None)
     hashio_api_url = os.environ.get('HASHIO_API_URL', None)
     if not web3_storage_token and not hashio_api_url:
-        raise Exception(f'Environment variable not set: WEB3_STORAGE_TOKEN or HASHIO_API_URL')
+        raise Exception(f'Environment variable not set: HASHIO_WEB3_STORAGE_TOKEN or HASHIO_API_URL. See the hashio docs.')
     if web3_storage_token:
         url = 'https://api.web3.storage/upload'
         headers = {

@@ -21,7 +21,8 @@ def load_file(uri: str) -> Union[str, None]:
     if os.path.exists(tmp_filename):
         raise Exception(f'Temporary file exists.')
 
-    url = f'https://{cid}.ipfs.dweb.link'
+    # url = f'https://{cid}.ipfs.dweb.link'
+    url = f'https://cloudflare-ipfs.com/ipfs/{cid}'
     
     if not os.path.exists(parent_dir):
         os.makedirs(parent_dir)
