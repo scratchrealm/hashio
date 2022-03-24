@@ -1,5 +1,4 @@
 import React, { FunctionComponent } from 'react';
-import FindFile from './FindFile';
 
 type Props = {
     width: number
@@ -12,8 +11,6 @@ const HomePage: FunctionComponent<Props> = ({width, height}) => {
     return (
         <div style={{margin: 20}}>
             <h2>Welcome to hashio</h2>
-            <p>Find a file</p>
-            <FindFile />
         </div>
     )
 }

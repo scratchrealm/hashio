@@ -50,6 +50,7 @@
     "@google-cloud/firestore": "^4.15.1",
     "@google-cloud/storage": "^5.14.1",
     "@types/react-router-dom": "^5.1.8",
-    "@vercel/node": "^1.12.1"
+    "@vercel/node": "^1.12.1",
+    "tweetnacl": "^1.0.3"
   }
 }

@@ -1,79 +1,9 @@
-import os
-import random
 from typing import Any, Union
-import requests
 
-from .get_hashio_storage_dir import get_hashio_storage_dir
+from .store_file import store_file
+from .load_file import load_file
 from .TemporaryDirectory import TemporaryDirectory
 from ._safe_pickle import _safe_pickle, _safe_unpickle
-
-base_api_url = os.environ.get('HASHIO_API_URL', 'https://hashio.vercel.app')
-# for dev:
-# export HASHIO_API_URL=http://localhost:3000
-
-def store_file(filename: str) -> str:
-    size = os.path.getsize(filename)
-    init_url = f'{base_api_url}/api/hashio?type=initiateFileUpload&size={size}'
-    init_response = requests.get(init_url)
-    if init_response.status_code != 200:
-        raise Exception(f'Error initiating file upload ({init_response.status_code}): {init_response.reason}')
-    x = init_response.json()
-    upload_url = x['uploadUrl']
-    file_name = x['fileName']
-    headers = {
-        'Content-Type': 'application/octet-stream',
-        'Content-Length': f'{size}'
-    }
-    with open(filename, 'rb') as f:
-        requests.put(
-            upload_url,
-            data=f,
-            headers=headers
-        )
-    finalize_url = f'{base_api_url}/api/hashio?type=finalizeFileUpload&fileName={file_name}'
-    finalize_response = requests.get(finalize_url)
-    if finalize_response.status_code != 200:
-        raise Exception(f'Error finalizing file upload ({finalize_response.status_code}): {finalize_response.reason}')
-    y = finalize_response.json()
-    sha1 = y['sha1']
-    return f'sha1://{sha1}'
-
-def load_file(uri: str) -> Union[str, None]:
-    assert uri.startswith('sha1://'), f'Invalid URI: {uri}'
-    a = uri.split('/')
-    assert len(a) >= 3, f'Invalid URI: {uri}'
-    sha1 = a[2]
-    assert len(sha1) == 40, f'Invalid URI: {uri}'
-
-    hashio_storage_dir = get_hashio_storage_dir()
-    parent_dir = f'{hashio_storage_dir}/sha1/{sha1[0]}{sha1[1]}/{sha1[2]}{sha1[3]}/{sha1[4]}{sha1[5]}'
-    filename = f'{parent_dir}/{sha1}'
-    if os.path.exists(filename):
-        return filename
-
-    init_url = f'{base_api_url}/api/hashio?type=initiateFileDownload&sha1={sha1}'
-    init_response = requests.get(init_url)
-    if init_response.status_code != 200:
-        raise Exception(f'Error initiating file download ({init_response.status_code}): {init_response.reason}')
-    x = init_response.json()
-    download_url = x.get('downloadUrl', None)
-    if not download_url:
-        return None
-    
-    if not os.path.exists(parent_dir):
-        os.makedirs(parent_dir)
-    tmp_filename = f'{filename}.tmp.{_random_string(8)}'
-    with requests.get(download_url, stream=True) as r:
-        r.raise_for_status()
-        with open(tmp_filename, 'wb') as f:
-            for chunk in r.iter_content(chunk_size=8192):
-                f.write(chunk)
-    try:
-        os.rename(tmp_filename, filename)
-    except:
-        if not os.path.exists(filename): # maybe some other process beat us to it
-            raise Exception(f'Unexpected problem moving file {tmp_filename}')
-    return filename
     
 def store_text(text: str) -> str:
     with TemporaryDirectory() as tmpdir:
@@ -127,7 +57,3 @@ def load_pkl(uri: str) -> Union[Any, None]:
     if local_path is None:
         return None
     return _safe_unpickle(local_path)
-
-def _random_string(num_chars: int) -> str:
-    chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-    return ''.join(random.choice(chars) for _ in range(num_chars))
